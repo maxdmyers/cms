@@ -1,6 +1,5 @@
 import {html, LitElement} from 'lit';
 import {property} from 'lit/decorators.js';
-import type {Validator} from '@lion/ui/form-core.js';
 import {colors as paletteColors} from '@src/constants/colors';
 import {emitChange, emitInput} from '@src/utilities/form-events';
 import {t} from '@src/utilities/translate';
@@ -25,19 +24,13 @@ function titleCase(value: string): string {
  * @fires input - Emitted when a color is picked.
  * @fires change - Emitted when a color is picked. Picking is a commit, so it
  *   follows each `input`.
- * @fires model-value-changed - The selected color changed. Re-dispatched from
- *   the host as a composed event so it crosses the shadow boundary.
  *
  * @cssproperty [--c-select-color-swatch-edge=rgb(0 0 0 / 15%)] - Edge of the
  *   no-color swatch, which would otherwise blend into a dark surface. The dark
  *   theme lightens it.
  * @cssproperty [--c-select-color-swatch-ring=transparent] - Ring around every
  *   swatch. The dark theme sets a faint one.
- *
- * `model-value-changed` is Lion's own protocol name, not one this package
- * chose, and it is kept because Lion's form system dispatches and listens for
- * it. Prefer the native events above: they are the contract this package
- * supports, and they carry the component as `event.target`.
+
  */
 export default class CraftSelectColor extends LitElement {
   static override styles = [styles];
@@ -57,8 +50,8 @@ export default class CraftSelectColor extends LitElement {
   /**
    * The currently selected color value.
    */
-  @property({attribute: 'model-value'})
-  modelValue: string | null = null;
+  @property()
+  value = '';
 
   /**
    * When enabled, a blank option (labeled {@link blankLabel}) is prepended
@@ -98,10 +91,10 @@ export default class CraftSelectColor extends LitElement {
   required = false;
 
   /**
-   * Lion validators, forwarded to the underlying rich select.
+   * Marks the value as invalid, forwarded to the underlying rich select.
    */
-  @property({attribute: false})
-  validators: Validator[] = [];
+  @property({type: Boolean, reflect: true})
+  invalid = false;
 
   /**
    * Renders a color swatch for the given color value. The special `__blank__`
@@ -110,11 +103,9 @@ export default class CraftSelectColor extends LitElement {
    * color, fill and border alike.
    *
    * Structural styling is applied inline (rather than via the component's
-   * scoped stylesheet) so the rendered node stays self-contained when Lion's
-   * `LionSelectInvoker` clones the selected option's child nodes into the
-   * invoker's shadow root, where this component's class rules don't apply.
-   * The CSS custom properties referenced here are inherited through the shadow
-   * boundary, so they still resolve in the invoker.
+   * scoped stylesheet) so the rendered node stays self-contained when the
+   * rich select copies the selected option's content into its field, where
+   * this component's class rules don't apply.
    */
   protected _swatchTemplate(color: string) {
     const isTransparent = color === '__blank__';
@@ -177,8 +168,8 @@ export default class CraftSelectColor extends LitElement {
 
   /**
    * Builds a single `<craft-option>` for a color value. The wrapper's flex
-   * layout is applied inline so it survives being cloned into the invoker's
-   * shadow root alongside the swatch (see `_swatchTemplate`).
+   * layout is applied inline so it survives being copied into the field
+   * alongside the swatch (see `_swatchTemplate`).
    */
   protected _optionTemplate(color: string, label: string) {
     return html`<craft-option .choiceValue=${color}>
@@ -195,29 +186,21 @@ export default class CraftSelectColor extends LitElement {
   }
 
   /**
-   * Bridges the inner rich select's selection back out to consumers.
-   *
-   * The inner `craft-select-rich` emits Lion's `model-value-changed` event with
-   * `bubbles: true` but NOT `composed`, so it stays inside this component's
-   * shadow root and never reaches Vue (or other host listeners). We catch it
-   * here, sync our own host `modelValue` from the inner select, then re-dispatch
-   * a `composed` `model-value-changed` from the host so v-model wrappers can
-   * read the up-to-date `this.modelValue` off `event.target`.
+   * Keeps the host's value in step with the inner select's and re-emits its
+   * event from the host, since the inner one doesn't leave the shadow root
+   * with the component as its target.
    */
-  protected _handleModelValueChanged(event: Event) {
+  protected _handleSelect(event: Event) {
     event.stopPropagation();
 
-    const inner = event.target as {modelValue?: string | null} | null;
-    this.modelValue = inner?.modelValue ?? null;
+    const inner = event.target as {value?: string} | null;
+    this.value = inner?.value ?? '';
 
-    this.dispatchEvent(
-      new CustomEvent('model-value-changed', {bubbles: true, composed: true})
-    );
-
-    // The public contract. Picking a color is a commit, so the pair fires
-    // together, the way a radio group's does.
-    emitInput(this);
-    emitChange(this);
+    if (event.type === 'input') {
+      emitInput(this);
+    } else {
+      emitChange(this);
+    }
   }
 
   protected override render() {
@@ -225,12 +208,13 @@ export default class CraftSelectColor extends LitElement {
       <craft-select-rich
         label=${this.label}
         name=${this.name}
-        .modelValue=${this.modelValue}
+        .value=${this.value}
         .disabled=${this.disabled}
         .readOnly=${this.readOnly}
         .required=${this.required}
-        .validators=${this.validators}
-        @model-value-changed=${this._handleModelValueChanged}
+        .invalid=${this.invalid}
+        @input=${this._handleSelect}
+        @change=${this._handleSelect}
       >
         ${this.allowTransparent
           ? this._optionTemplate(

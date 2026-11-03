@@ -26,10 +26,10 @@ An optional "transparent" entry sits alongside the colors, for a value meaning _
 Picking a color is a commit, so the control emits `input` and `change` together:
 
 ```js
-select.addEventListener('change', () => save(select.modelValue));
+select.addEventListener('change', () => save(select.value));
 ```
 
-It also emits `model-value-changed`, Lion's internal protocol name. Prefer the native events — they carry the component as `event.target`.
+Both are dispatched from the component, so `event.target` is the color select.
 
 ## In PHP
 

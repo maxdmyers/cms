@@ -11,10 +11,6 @@ import type CraftSelectColor from './select-color.js';
  * `args` and `argTypes` are derived from the custom elements manifest, so the
  * controls and the API tables follow the component's JSDoc. Adding a property
  * to `select-color.ts` surfaces it here without touching this file.
- *
- * The template is written out rather than generated: the value is bound as the
- * `modelValue` property so an empty selection can be `null`, which an attribute
- * cannot express.
  */
 const {args, argTypes} =
   getStorybookHelpers<CraftSelectColor>('craft-select-color');
@@ -24,14 +20,14 @@ type SelectColorArgs = CraftSelectColor & typeof args;
 const meta = {
   title: 'Form Controls/Select Controls/Select Color',
   component: 'craft-select-color',
-  args: {...args, label: 'Color', name: 'color', 'model-value': 'red'},
+  args: {...args, label: 'Color', name: 'color', value: 'red'},
   argTypes,
   render: (args) => html`
     <craft-select-color
       label="${args.label ?? ''}"
       name="${args.name ?? 'color'}"
       ?allow-transparent="${args['allow-transparent']}"
-      .modelValue="${args['model-value'] ?? null}"
+      .value="${args['value'] ?? ''}"
     ></craft-select-color>
   `,
 } satisfies Meta<SelectColorArgs>;
@@ -41,10 +37,6 @@ type Story = StoryObj<SelectColorArgs>;
 
 /**
  * A color is selected on load, so the invoker shows its swatch.
- *
- * The assertions live here rather than in a unit test: the component renders a
- * `craft-select-rich`, whose Lion internals need layout that happy-dom does not
- * provide, so this is the only place the rendered control can be checked.
  */
 export const Default: Story = {
   play: async ({canvasElement}) => {
@@ -57,14 +49,13 @@ export const Default: Story = {
     await expect(select.getAttribute('name')).toBe('color');
 
     // And the selection reaches it as a model value.
-    await expect((host as {modelValue?: unknown}).modelValue).toBe('red');
+    await expect((host as {value?: unknown}).value).toBe('red');
   },
 };
 
 /**
  * Picking a color is a commit, so the control emits native `input` and
- * `change` together — the events a consumer should bind, rather than Lion's
- * internal `model-value-changed`.
+ * `change` together, from the host rather than the inner select.
  *
  * Asserted here rather than in a unit test for the same reason as the rest of
  * this file: the inner `craft-select-rich` needs layout that happy-dom does
@@ -83,27 +74,27 @@ export const NativeEvents: Story = {
     });
 
     const inner = host.shadowRoot!.querySelector('craft-select-rich')!;
-    inner.dispatchEvent(
-      new CustomEvent('model-value-changed', {bubbles: true})
-    );
+    for (const type of ['input', 'change']) {
+      inner.dispatchEvent(new Event(type, {bubbles: true, composed: true}));
+    }
 
     await expect(order).toEqual(['input', 'change']);
   },
 };
 
-/** Nothing selected — the invoker shows the placeholder with no swatch. */
+/** No value yet, so the first color is shown. */
 export const Empty: Story = {
-  args: {'model-value': null},
+  args: {value: ''},
   play: async ({canvasElement}) => {
     const host = canvasElement.querySelector('craft-select-color')!;
 
-    await expect((host as {modelValue?: unknown}).modelValue).toBeNull();
+    await expect((host as {value?: unknown}).value).toBe('');
   },
 };
 
 /** Preselected blue, so the blue swatch appears in the invoker. */
 export const Preselected: Story = {
-  args: {'model-value': 'blue'},
+  args: {value: 'blue'},
 };
 
 /**
@@ -111,7 +102,7 @@ export const Preselected: Story = {
  * checkerboard.
  */
 export const AllowTransparent: Story = {
-  args: {'allow-transparent': true, 'model-value': '__blank__'},
+  args: {'allow-transparent': true, value: '__blank__'},
   play: async ({canvasElement}) => {
     const host = canvasElement.querySelector('craft-select-color')!;
 
@@ -119,11 +110,11 @@ export const AllowTransparent: Story = {
     await expect((host as {allowTransparent?: boolean}).allowTransparent).toBe(
       true
     );
-    await expect((host as {modelValue?: unknown}).modelValue).toBe('__blank__');
+    await expect((host as {value?: unknown}).value).toBe('__blank__');
   },
 };
 
 /** The same option offered but nothing selected yet. */
 export const AllowTransparentEmpty: Story = {
-  args: {'allow-transparent': true, 'model-value': null},
+  args: {'allow-transparent': true, value: ''},
 };
