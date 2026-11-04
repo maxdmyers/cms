@@ -1,5 +1,6 @@
 import {createApp, h, nextTick, ref} from 'vue';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vite-plus/test';
+import '@craftcms/ui/components/checkbox/checkbox';
 import type {UiControlPayload} from './types';
 
 const stub = vi.hoisted(() => {
@@ -54,6 +55,13 @@ vi.mock(
     createElementSelectorModal: stub.createElementSelectorModal,
   })
 );
+
+/** Sets a `craft-checkbox` the way a user would, ending with its `change`. */
+function toggleCheckbox(box: Element, checked: boolean): void {
+  const input = box.querySelector('input')!;
+  input.checked = checked;
+  input.dispatchEvent(new Event('change', {bubbles: true}));
+}
 
 // `<craft-element-select-input>` is now an inert wrapper — the control renders
 // its own chips and drives its own modal — so an empty custom element is a
@@ -958,10 +966,7 @@ describe('ElementSelectControl', () => {
       });
       const box = root.querySelector<HTMLElement>('.card-grid craft-checkbox')!;
 
-      Object.defineProperty(box, 'checked', {value: true, configurable: true});
-      box.dispatchEvent(
-        new CustomEvent('model-value-changed', {bubbles: true})
-      );
+      toggleCheckbox(box, true);
       await nextTick();
 
       expect(
@@ -1196,15 +1201,8 @@ describe('ElementSelectControl', () => {
       return toolbarMenu(root);
     }
 
-    /** Reports a new checked state the way `craft-checkbox` does. */
     function check(box: HTMLElement, checked: boolean): void {
-      Object.defineProperty(box, 'checked', {
-        value: checked,
-        configurable: true,
-      });
-      box.dispatchEvent(
-        new CustomEvent('model-value-changed', {bubbles: true})
-      );
+      toggleCheckbox(box, checked);
     }
 
     function selectFirstChip(root: HTMLElement): void {
@@ -1382,10 +1380,7 @@ describe('ElementSelectControl', () => {
       });
 
       const box = selectAllBox(root)!;
-      Object.defineProperty(box, 'checked', {value: true, configurable: true});
-      box.dispatchEvent(
-        new CustomEvent('model-value-changed', {bubbles: true})
-      );
+      toggleCheckbox(box, true);
       await nextTick();
 
       return root;

@@ -29,14 +29,6 @@
       num: selectedIds.value.length,
     })
   );
-
-  /**
-   * `craft-checkbox` dispatches from the host rather than an inner `<input>`, so
-   * the checked state has to be read off the target as a plain property.
-   */
-  function checkboxValue(event: Event): boolean {
-    return Boolean((event.target as {checked?: boolean} | null)?.checked);
-  }
 </script>
 
 <template>
@@ -46,7 +38,9 @@
         label-sr-only
         .checked="allSelected"
         .indeterminate="someSelected"
-        @model-value-changed="selection.toggleAll(checkboxValue($event))"
+        @change="
+          selection.toggleAll(($event.target as HTMLInputElement).checked)
+        "
       >
         <label slot="label">{{ t('Select all') }}</label>
       </craft-checkbox>

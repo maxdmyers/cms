@@ -11,7 +11,7 @@
   import {destroyForSite} from '@/actions/CraftCms/Cms/Http/Controllers/Elements/DeleteElementController';
   import {useSlideout} from '@/common/slideouts/useSlideout';
   import type {UiControlPayload} from './types';
-  import {ignoreModelValueInitialization, inputName} from './runtime';
+  import {inputName} from './runtime';
 
   type Site = {
     id: number;
@@ -124,16 +124,11 @@
   }
 
   function onStatusChanged(siteId: number, event: Event): void {
-    ignoreModelValueInitialization((event) => {
-      if (!(event.target instanceof CraftSwitch)) {
-        throw new TypeError('Expected a switch event target.');
-      }
+    if (!(event.currentTarget instanceof CraftSwitch)) {
+      throw new TypeError('Expected a switch event target.');
+    }
 
-      // Setting `checked` programmatically fires the event too
-      if (event.target.checked !== Boolean(statuses.value[siteId])) {
-        setStatus(siteId, event.target.checked);
-      }
-    })(event);
+    setStatus(siteId, event.currentTarget.checked);
   }
 
   function addSite(event: Event): void {
@@ -275,7 +270,7 @@
             size="small"
             :labelled-by="nameId(site)"
             .disabled="!editable"
-            @model-value-changed="onStatusChanged(site.id, $event)"
+            @change="onStatusChanged(site.id, $event)"
           ></craft-switch>
         </div>
       </template>
@@ -303,7 +298,7 @@
           .checked="Boolean(statuses[site.id])"
           size="small"
           :labelled-by="nameId(site)"
-          @model-value-changed="onStatusChanged(site.id, $event)"
+          @change="onStatusChanged(site.id, $event)"
         ></craft-switch>
       </div>
 

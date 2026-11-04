@@ -3,8 +3,8 @@ import {Base, Modal} from '@craftcms/garnish';
 /** A `craft-button`, whose `disabled` and `loading` states are properties. */
 type SelectButton = HTMLElement & {disabled: boolean; loading: boolean};
 
-/** A `craft-radio-group`; its `modelValue` is the chosen section's ID. */
-type SectionGroup = HTMLElement & {modelValue: string | undefined};
+/** A `craft-radio-group`; its `value` is the chosen section's ID. */
+type SectionGroup = HTMLElement & {value: string};
 
 interface MoveTargetSection {
   id: number;
@@ -180,16 +180,16 @@ export class EntryMover extends Base {
         for (const section of sections) {
           const radio = document.createElement('craft-radio') as HTMLElement & {
             label: string;
-            choiceValue: string;
+            value: string;
           };
           radio.label = section.label;
-          radio.choiceValue = String(section.id);
+          radio.value = String(section.id);
           list.append(radio);
         }
 
-        this.addListener(list, 'model-value-changed', () => {
+        this.addListener(list, 'change', () => {
           if (this.#selectBtn) {
-            this.#selectBtn.disabled = !list.modelValue;
+            this.#selectBtn.disabled = !list.value;
           }
         });
       })
@@ -214,7 +214,7 @@ export class EntryMover extends Base {
     Craft.cp.announce(Craft.t('app', 'Loading'));
 
     const data = {
-      sectionId: this.#sectionsList?.modelValue,
+      sectionId: this.#sectionsList?.value || undefined,
       entryIds: this.entryIds,
     };
 
