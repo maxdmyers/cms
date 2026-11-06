@@ -18,7 +18,7 @@ A change that needs any of these is a different pattern. Don't add a mode to `cr
 ### Semantics
 
 - [ ] The items keep their native button and link roles, and the content container gets `role="none"` instead of `menu`, as in the example. Per WCAG 4.1.2 (Name, Role, Value) and 1.3.1 (Info and Relationships). Not yet verified.
-- [ ] The invoker announces the popup it opens accurately. Per WCAG 4.1.2 (Name, Role, Value). Known gap: the menu sets `aria-haspopup="true"` on the invoker, which means `menu`, while the panel is not a menu (Lion gives it `role="dialog"`; see `popover.a11y.md`). The example sets no `aria-haspopup`.
+- [ ] The invoker announces the popup it opens accurately. Per WCAG 4.1.2 (Name, Role, Value). Known gap: the menu sets `aria-haspopup="true"` on the invoker, which means `menu`, while the panel is not a menu (it has `role="dialog"`; see `popover.a11y.md`). The example sets no `aria-haspopup`.
 - [ ] The invoker points at the content with `aria-controls`, as in the example. Per WCAG 4.1.2 (Name, Role, Value). Not yet verified.
 - [ ] The generated invoker is named by `label` (default "Actions"), through its icon's label, and the same `label` names the panel. Per WCAG 4.1.2 (Name, Role, Value). Not yet verified.
 - [ ] With `disabled`, the invoker carries `aria-disabled="true"` (and the generated one is a disabled button), and the menu doesn't open by click or keyboard. Per WCAG 4.1.2 (Name, Role, Value). Not yet verified. The `DataDrivenDisabled` and `SlotBasedDisabled` stories have no `play()` assertion.
